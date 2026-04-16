@@ -1,0 +1,102 @@
+apply plugin: 'java'
+apply plugin: 'jacoco'
+
+repositories {
+    mavenCentral()
+}
+
+sourceSets {
+    test {
+        java.srcDir file('src/test/java')
+        resources.srcDir file('src/test/resources')
+    }
+}
+
+configurations {
+  testOutput.extendsFrom(testImplementation)
+}
+
+jacoco {
+  toolVersion = '0.8.12'
+}
+
+tasks.withType(JavaCompile) {
+	 options.encoding = "UTF-8"
+        sourceCompatibility = '21'
+        targetCompatibility = '21'
+}
+
+// Fix duplicate resources
+tasks.withType(Copy) {
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    }
+    
+tasks.withType(Test) {
+   reports.html.outputLocation.set(file("${reporting.baseDir}/${name}/junit"))
+     	
+
+  jacoco {
+	 
+	 destinationFile = file("${reporting.baseDir}/jacoco/${name}/jacoco.exec")
+  }
+
+  testLogging {
+    events "passed", "skipped", "failed"
+    exceptionFormat "full"
+  }
+}
+
+jacocoTestReport {
+  sourceDirectories.setFrom(files('src/main/java'))  
+  classDirectories.setFrom(files("$buildDir/classes/java/main"))
+  executionData = fileTree(dir:"${reporting.baseDir}/jacoco/", include: 'test/*.exec')
+  reports {
+    xml.required = true
+    csv.required = false
+    html.destination = file("${reporting.baseDir}/test/coverage")
+    xml.destination = file("${reporting.baseDir}/test/coverage/jacocoTestReport.xml")
+  }
+}
+
+task jacocoIntegrationTestReport(type: org.gradle.testing.jacoco.tasks.JacocoReport) {
+  sourceDirectories = files('src/main/java')
+  classDirectories =  files("$buildDir/classes/java/main")
+  executionData = fileTree(dir:"${reporting.baseDir}/jacoco/", include: 'integrationTest/*.exec')
+  reports {
+    xml.required = true
+    csv.required = false
+    html.destination = file("${reporting.baseDir}/integrationTest/coverage")
+    xml.destination = file("${reporting.baseDir}/integrationTest/coverage/jacocoTestReport.xml")
+  }
+}
+
+task coverage{
+  dependsOn test
+  dependsOn jacocoTestReport
+  finalizedBy jacocoIntegrationTestReport
+}
+
+dependencies {
+    // Antlr from libs directory
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    
+  //Gson
+  implementation 'com.google.code.gson:gson:2.13.2'
+    
+  //JUnit
+  testImplementation 'junit:junit:4.13.2' 
+}
+
+
+// Java 21/25 compatibility check
+task checkJavaVersion {
+    doLast {
+        def javaVersion = JavaVersion.current()
+        println "Building with Java version: $javaVersion"
+        if (javaVersion < JavaVersion.VERSION_21) {
+            throw new GradleException("This project requires Java 21 or higher. Found: $javaVersion")
+        }
+    }
+}
+
+compileJava.dependsOn checkJavaVersion
