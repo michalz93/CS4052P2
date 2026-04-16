@@ -31,6 +31,21 @@ public class Model {
         return states;
     }
 
+    public State[] getInitialStates() {
+        return java.util.Arrays.stream(states)
+                .filter(s -> s.isInit())
+                .toArray(State[]::new);
+    }
+
+    public State getState(String id) {
+        for (State state : states) {
+            if (id.equals(state.getName())) {
+                return state;
+            }
+        }
+        return null;
+    }
+
     /**
      * Returns the list of transitions
      * 

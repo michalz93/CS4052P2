@@ -9,7 +9,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 import formula.pathFormula.*;
-import formula.stateFormula.AtomicProp;
 import formula.stateFormula.*;
 
 /**
@@ -43,6 +42,17 @@ public class FormulaParser {
 	        JsonElement jsonElement = JsonParser.parseReader(fileReader);
 	        jsonFormula = jsonElement.getAsJsonObject();
 	        String formula = jsonFormula.get(JSON_FORMULA_FIELD).getAsString();
+            System.out.println(formula);
+	        reader = new Reader(formula);
+		}
+    }
+
+    public FormulaParser(String filePath, boolean not) throws IOException {
+        try (FileReader fileReader = new FileReader(filePath)) {
+	        JsonElement jsonElement = JsonParser.parseReader(fileReader);
+	        jsonFormula = jsonElement.getAsJsonObject();
+	        String formula = "!" + jsonFormula.get(JSON_FORMULA_FIELD).getAsString();
+            System.out.println(formula);
 	        reader = new Reader(formula);
 		}
     }

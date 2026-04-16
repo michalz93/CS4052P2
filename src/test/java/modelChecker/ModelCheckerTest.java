@@ -5,6 +5,8 @@ import static org.junit.Assert.*;
 import java.io.IOException;
 
 import org.junit.Test;
+import org.junit.Before;
+import org.junit.BeforeClass;
 
 import formula.FormulaParser;
 import formula.stateFormula.StateFormula;
@@ -13,14 +15,29 @@ import modelChecker.SimpleModelChecker;
 import model.Model;
 
 public class ModelCheckerTest {
+    private static Model model;
+    private static Model basicModel;
+    private ModelChecker mc;
 
+    @BeforeClass
+    public static void setup() throws IOException {
+        model = Model.parseModel("src/test/resources/model1.json");
+        basicModel = Model.parseModel("src/test/resources/basicModel.json");
+        
+    }
+
+    @Before 
+    public void beforeEach() throws IOException {
+        mc = new SimpleModelChecker();
+    }
+    
     /*
      * An example of how to set up and call the model building methods and make
      * a call to the model checker itself. The contents of model.json,
      * constraint1.json and ctl.json are just examples, you need to add new
      * models and formulas for the mutual exclusion task.
      **/
-    @Test
+    /*@Test
     public void buildAndCheckModel() {
         try {
             Model model = Model.parseModel("src/test/resources/model1.json");
@@ -31,15 +48,128 @@ public class ModelCheckerTest {
 
             ModelChecker mc = new SimpleModelChecker();
 
-            System.out.println("hello2");
             mc.check(model,query);
-            assertTrue(false);
             // TO IMPLEMENT
-            // assertTrue(mc.check(model, query));
+            //assertTrue(mc.check(model, query));
+        } catch (IOException e) {
+            e.printStackTrace();
+            fail(e.toString());
+        }
+    }*/
+
+    @Test
+    public void testTrueQ() {
+        try {
+            StateFormula query = new FormulaParser("src/test/resources/true.json").parse();
+
+            assertTrue(mc.check(model, query));
         } catch (IOException e) {
             e.printStackTrace();
             fail(e.toString());
         }
     }
 
+    @Test // I thought parser should not allow FALSE as it's not in state formula rules :)
+    public void testFalseQ() {
+        try {
+            StateFormula query = new FormulaParser("src/test/resources/false.json").parse();
+
+            assertFalse(mc.check(model, query));
+        } catch (IOException e) {
+            e.printStackTrace();
+            fail(e.toString());
+        }
+    }
+
+    @Test
+    public void testNegationQ() {
+        try {
+            StateFormula query = new FormulaParser("src/test/resources/negation.json").parse();
+
+            assertTrue(mc.check(model, query));
+        } catch (IOException e) {
+            e.printStackTrace();
+            fail(e.toString());
+        }
+    }
+
+    @Test
+    public void doubleNegationQ() {
+        try {
+            StateFormula query = new FormulaParser("src/test/resources/doubleNegation.json").parse();
+
+            assertTrue(mc.check(model, query));
+        } catch (IOException e) {
+            e.printStackTrace();
+            fail(e.toString());
+        }
+    }
+
+    @Test
+    public void andQ() {
+        try {
+            StateFormula query = new FormulaParser("src/test/resources/and.json").parse();
+            assertTrue(mc.check(model, query));
+        } catch (IOException e) {
+            e.printStackTrace();
+            fail(e.toString());
+        }
+    }
+
+    @Test
+    public void orQ() {
+        try {
+            StateFormula query = new FormulaParser("src/test/resources/or.json").parse();
+            assertTrue(mc.check(model, query));
+        } catch (IOException e) {
+            e.printStackTrace();
+            fail(e.toString());
+        }
+    }
+
+    @Test
+    public void advancedBasicsQ() {
+        try {
+            StateFormula query = new FormulaParser("src/test/resources/advancedLogin.json").parse();
+            assertTrue(mc.check(model, query));
+        } catch (IOException e) {
+            e.printStackTrace();
+            fail(e.toString());
+        }
+    }
+
+    @Test
+    public void justP() {
+        try {
+            StateFormula query = new FormulaParser("src/test/resources/p.json").parse();
+            assertTrue("justP failed", mc.check(basicModel, query));
+        } catch (IOException e) {
+            e.printStackTrace();
+            fail(e.toString());
+        }
+    }
+
+    @Test
+    public void pAndQ() {
+        try {
+            StateFormula query = new FormulaParser("src/test/resources/pAndQ.json").parse();
+            assertTrue("PandQ failed", mc.check(basicModel, query));
+        } catch (IOException e) {
+            e.printStackTrace();
+            fail(e.toString());
+        }
+    }
+
+    @Test
+    public void forAllPNext() {
+        try {
+            StateFormula query = new FormulaParser("src/test/resources/allHavePAsNext.json").parse();
+            StateFormula negatedQuery = new FormulaParser("src/test/resources/allHavePAsNext.json", true).parse();
+            assertTrue(mc.check(basicModel, query));
+            assertFalse(mc.check(basicModel, negatedQuery));
+        } catch (IOException e) {
+            e.printStackTrace();
+            fail(e.toString());
+        }
+    }
 }
