@@ -13,7 +13,7 @@
 		{
 			"init": true,
 			"name": "s2",
-			"label": ["q", "p"]
+			"label": ["q"]
 		}
 	],
 	"transitions": [

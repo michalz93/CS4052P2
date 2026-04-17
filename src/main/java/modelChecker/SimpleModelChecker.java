@@ -5,15 +5,18 @@ import formula.pathFormula.*;
 import model.*;
 
 public class SimpleModelChecker implements ModelChecker {
+    private String trace;
 
     @Override
     public boolean check(Model model, StateFormula query) {
         System.out.println("Query: " + query);
+        trace = ""; 
         State[] initialStates = model.getInitialStates();
         
 
         for (State s : initialStates) {
             System.out.println(s.getName());
+            trace = s.getName();
             if (!checkState(model, s , query)) {
                 return false;
             }
