@@ -17,13 +17,17 @@ import model.Model;
 public class ModelCheckerTest {
     private static Model model;
     private static Model basicModel;
-    private ModelChecker mc;
+    private static Model pModel;
+    private static Model lecture12;
+    private SimpleModelChecker mc;
     private static int count = 1;
 
     @BeforeClass
     public static void setup() throws IOException {
         model = Model.parseModel("src/test/resources/model1.json");
         basicModel = Model.parseModel("src/test/resources/basicModel.json");
+        pModel = Model.parseModel("src/test/resources/pModel.json");
+        lecture12 = Model.parseModel("src/test/resources/lecture12/model.json");
         
     }
 
@@ -145,7 +149,7 @@ public class ModelCheckerTest {
     public void justP() {
         try {
             StateFormula query = new FormulaParser("src/test/resources/p.json").parse();
-            assertTrue("justP failed", mc.check(basicModel, query));
+            assertTrue("justP failed", mc.check(pModel, query));
         } catch (IOException e) {
             e.printStackTrace();
             fail(e.toString());
@@ -156,7 +160,7 @@ public class ModelCheckerTest {
     public void pAndQ() {
         try {
             StateFormula query = new FormulaParser("src/test/resources/pAndQ.json").parse();
-            assertTrue("PandQ failed", mc.check(basicModel, query));
+            assertTrue("PandQ failed", mc.check(pModel, query));
         } catch (IOException e) {
             e.printStackTrace();
             fail(e.toString());
@@ -164,12 +168,37 @@ public class ModelCheckerTest {
     }
 
     @Test
-    public void forAllPNext() {
+    public void allPathsPNext() {
         try {
             StateFormula query = new FormulaParser("src/test/resources/allHavePAsNext.json").parse();
             //StateFormula negatedQuery = new FormulaParser("src/test/resources/allHavePAsNext.json", true).parse();
-            assertTrue(mc.check(basicModel, query));
+            assertFalse(mc.check(basicModel, query));
+            assertEquals(mc.getBetterTrace(), "s2-s0");
             //assertFalse(mc.check(basicModel, negatedQuery));
+        } catch (IOException e) {
+            e.printStackTrace();
+            fail(e.toString());
+        }
+    }
+
+    @Test
+    public void atLeastOnePathPNext() {
+        try {
+            StateFormula query = new FormulaParser("src/test/resources/oneHasPAsNext.json").parse();
+            assertFalse(mc.check(basicModel, query));
+            //assertFalse(mc.check(basicModel, negatedQuery));
+        } catch (IOException e) {
+            e.printStackTrace();
+            fail(e.toString());
+        }
+    }
+
+    @Test
+    public void lecture1() {
+        try {
+            StateFormula query = new FormulaParser("src/test/resources/lecture12/slide1.json").parse();
+            assertTrue(mc.check(lecture12, query));
+            assertEquals(mc.getBetterTrace(), "s0-s1");
         } catch (IOException e) {
             e.printStackTrace();
             fail(e.toString());

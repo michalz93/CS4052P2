@@ -3,40 +3,29 @@
 		{
 			"init": true,
 			"name": "s0",
-			"label": ["p"]
+			"label": ["p", "q"]
 		}, 
 		{
 			"init": false,
 			"name": "s1", 
-			"label": ["p", "q"]
+			"label": []
 		}, 
 		{
 			"init": true,
 			"name": "s2",
-			"label": ["r"]
+			"label": ["q", "p"]
 		}
 	],
 	"transitions": [
 		{
 			"source": "s0",
-			"target": "s1",
+			"target": "s2",
 			"actions": ["act1"]
 		}, 
-		{
-			"source": "s0",
-			"target": "s2",
-			"actions": ["act2"]
-		}, 
-		{
-			"source": "s1",
-			"target": "s2",
-			"actions": ["act2"]
-		},
 		{
 			"source": "s2",
 			"target": "s0",
 			"actions": ["act2"]
 		}
-
 	]
 }

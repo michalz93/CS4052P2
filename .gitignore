@@ -19,6 +19,25 @@
 *.tar.gz
 *.rar
 
+# Gradle
+.gradle/
+build/
+
+# Java compiled files
+*.class
+
+# Logs / reports
+*.log
+
+# OS junk (macOS)
+.DS_Store
+._*
+
+# IDE (optional)
+.idea/
+.vscode/
+*.iml
+
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 replay_pid*
