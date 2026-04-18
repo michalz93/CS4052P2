@@ -218,9 +218,9 @@ public class ModelCheckerTest {
     }
 
     // Examples tested
-    // Model 1
-    /*@Test
-    public void ctl1m1() {
+    
+    @Test
+    public void lecture12s1() {
         try {
             StateFormula query = new FormulaParser("src/test/resources/lecture12/slide1.json").parse();
             assertTrue(mc.check(lecture12, query));
@@ -229,14 +229,40 @@ public class ModelCheckerTest {
             e.printStackTrace();
             fail(e.toString());
         }
-    }*/
+    }
 
-    /*@Test
-    public void ctl2m1() {
+    @Test
+    public void lecture12s2() {
         try {
-            StateFormula query = new FormulaParser("src/test/resources/lecture12/slide1.json").parse();
+            StateFormula query = new FormulaParser("src/test/resources/lecture12/slide2.json").parse();
+            assertFalse(mc.check(lecture12, query));
+            assertEquals(mc.getBetterTrace(), "s0-s2");
+        } catch (IOException e) {
+            e.printStackTrace();
+            fail(e.toString());
+        }
+    }
+
+    // Should accept version without s3?
+    @Test
+    public void lecture12s3() {
+        try {
+            StateFormula query = new FormulaParser("src/test/resources/lecture12/slide3.json").parse();
             assertTrue(mc.check(lecture12, query));
-            assertEquals(mc.getBetterTrace(), "s0-s1");
+            assertEquals(mc.getBetterTrace(), "s0-s1-s3");
+        } catch (IOException e) {
+            e.printStackTrace();
+            fail(e.toString());
+        }
+    }
+
+    // Model 1
+    /*@Test
+    public void ctl1M1() {
+        try {
+            StateFormula query = new FormulaParser("src/test/resources/examples/ctl1.json").parse();
+            assertFalse(mc.check(model, query));
+            //assertEquals(mc.getBetterTrace(), "s0-s1");
         } catch (IOException e) {
             e.printStackTrace();
             fail(e.toString());
