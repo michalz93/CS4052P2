@@ -241,7 +241,7 @@ public class ModelCheckerTest {
         try {
             StateFormula query = new FormulaParser("src/test/resources/examples/ctl2.json").parse();
             assertTrue(mc.check(model2, query));
-            assertEquals("s0-s1-s2", mc.getBetterTrace());
+            assertEquals("s0-act1-s1-act2-s2", mc.getBetterTrace());
         } catch (IOException e) {
             e.printStackTrace();
             fail(e.toString());

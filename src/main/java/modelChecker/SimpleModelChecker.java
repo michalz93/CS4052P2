@@ -17,6 +17,7 @@ public class SimpleModelChecker implements ModelChecker {
         
 
         for (State s : initialStates) {
+            System.out.println("This is initial state");
             System.out.println(s.getName());
             trace.clear();
             if (!checkState(model, s , query)) {
@@ -81,9 +82,10 @@ public class SimpleModelChecker implements ModelChecker {
 
             for (Transition transition: transitions) {
                 if (transition.getSource().equals(state.getName())) {
+                    System.out.println("transition");
                     PathResult result = checkPathFormula(model, state, model.getState(transition.getTarget()), thereExists.pathFormula);
                     if (result.holds) {
-                        //trace.add(model.getState(transition.getTarget()).getName());
+                        System.out.println("Hello");
                         trace.addAll(result.pathTrace);
                         return true;
                     }
@@ -103,6 +105,9 @@ public class SimpleModelChecker implements ModelChecker {
         } else if (pathFormula instanceof Until) {
             Until until = (Until) pathFormula;
 
+            System.out.println("Until left side: " + until.getLeftActions());
+            System.out.println("Until right side: " + until.getRightActions());
+
             if (until.getRightActions().isEmpty()) {
                 boolean holds = checkState(model, source, until.right);
                 return new PathResult(holds, null);
@@ -119,21 +124,72 @@ public class SimpleModelChecker implements ModelChecker {
                 }
             }
 
+            System.out.println("None is empty!");
+
             List<State> E = new ArrayList<>();
             Map<State, State> parents = new HashMap<>();
+            Map<State, String> parentAction = new HashMap<>();;
             for (State state : model.getStates()) {
                 if (checkState(model, state, until.right)) {
                     E.add(state);
                     parents.put(state, null);
+                    parentAction.put(state, null);
                 }
             }
             if (E.size() == 0) return new PathResult(false, null);
- 
+
+            System.out.println("There are valid end states!");
+            
+            List<State> endStates = new ArrayList<>(E);
             List<State> T = new ArrayList<>(E);
             while (E.size() > 0) {
                 State sPrime = E.get(0);
                 E.remove(0);
-                for (State s : sPrime.getPredecesors()) {
+                Set<String> allowedActions;
+                if (endStates.contains(sPrime)) {
+                    allowedActions = until.getRightActions();
+                } else {
+                    allowedActions = until.getLeftActions();
+                }
+                System.out.println("Allowed actions: " + allowedActions + " and target state is: " + sPrime.getName());
+
+                for (Transition transition : model.getTransitions()) {
+                    System.out.println("Transtition!");
+                    State s = model.getState(transition.getSource());
+                    String allowedAction = transition.getAllowedAction(allowedActions);
+                    System.out.println(transition.getTarget().equals(sPrime.getName()));
+                    System.out.println(!(T.contains(s)) );
+                    System.out.println(checkState(model, s, until.left));
+                    System.out.println((allowedAction != null));
+                    if (transition.getTarget().equals(sPrime.getName()) 
+                        && !(T.contains(s)) 
+                        && checkState(model, s, until.left) 
+                        && (allowedAction != null)
+                    )  {
+                        System.out.println("Doing something");
+                        E.add(s);
+                        T.add(s);
+
+                        parents.put(s, sPrime);
+                        parentAction.put(s, allowedAction);
+
+                        if (T.contains(source)){ 
+                            List<String> pathTrace = new ArrayList<>();
+
+                            State cur = source;
+                            while (parents.get(cur) != null) {
+                                String action = parentAction.get(cur);
+                                cur = parents.get(cur);
+                                if (action != null) pathTrace.add(action);
+                                if (cur != null) pathTrace.add(cur.getName());
+                            }
+
+                            Collections.reverse(pathTrace);
+                            return new PathResult(true, pathTrace);
+                        }
+                    }
+                }
+                /*for (State s : sPrime.getActionPredecessors(allowedActions, model.getTransitions())) {
                     if (checkState(model, s, until.left) && !(T.contains(s))) {
                         E.add(s);
                         T.add(s);
@@ -153,7 +209,7 @@ public class SimpleModelChecker implements ModelChecker {
                             return new PathResult(true, pathTrace);
                         }
                     }
-                }
+                }*/
             }
 
             

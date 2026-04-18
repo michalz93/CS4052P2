@@ -1,6 +1,7 @@
 package model;
 
 import java.util.Arrays;
+import java.util.Set;
 
 /**
  * Each transition may have a set of actions to be performed. 
@@ -31,6 +32,24 @@ public class  Transition {
      * */
     public String[] getActions() {
 	return actions;
+    }
+
+    public boolean hasAllowedAction(Set<String> allowedActions) {
+        for (String action : actions) {
+            if (allowedActions.contains(action)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public String getAllowedAction(Set<String> allowedActions) {
+        for (String action : actions) {
+            if (allowedActions.contains(action)) {
+                return action;
+            }
+        }
+        return null;
     }
 	
     @Override
