@@ -3,6 +3,8 @@ package modelChecker;
 import formula.stateFormula.*;
 import formula.pathFormula.*;
 import model.*;
+
+import java.nio.file.Path;
 import java.util.*;
 
 public class SimpleModelChecker implements ModelChecker {
@@ -17,11 +19,13 @@ public class SimpleModelChecker implements ModelChecker {
         for (State s : initialStates) {
             System.out.println(s.getName());
             trace.clear();
-            trace.add(s.getName());
             if (!checkState(model, s , query)) {
+                trace.add(s.getName());
                 return false;
             }
+            trace.add(s.getName());
         }
+        
         
         return true;
     }
@@ -62,8 +66,8 @@ public class SimpleModelChecker implements ModelChecker {
 
             for (Transition transition: transitions) {
                 if (transition.getSource().equals(state.getName())) {
-                    boolean result = checkPathFormula(model, state, model.getState(transition.getTarget()), forAll.pathFormula);
-                    if (!result) {
+                    PathResult result = checkPathFormula(model, state, model.getState(transition.getTarget()), forAll.pathFormula);
+                    if (!result.holds) {
                         trace.add(model.getState(transition.getTarget()).getName());
                         return false;
                     }
@@ -77,9 +81,10 @@ public class SimpleModelChecker implements ModelChecker {
 
             for (Transition transition: transitions) {
                 if (transition.getSource().equals(state.getName())) {
-                    boolean result = checkPathFormula(model, state, model.getState(transition.getTarget()), thereExists.pathFormula);
-                    if (result) {
-                        trace.add(model.getState(transition.getTarget()).getName());
+                    PathResult result = checkPathFormula(model, state, model.getState(transition.getTarget()), thereExists.pathFormula);
+                    if (result.holds) {
+                        //trace.add(model.getState(transition.getTarget()).getName());
+                        trace.addAll(result.pathTrace);
                         return true;
                     }
                 }
@@ -89,12 +94,72 @@ public class SimpleModelChecker implements ModelChecker {
         return false;
     }
 
-    public boolean checkPathFormula(Model model, State source, State target, PathFormula pathFormula) {
+    public PathResult checkPathFormula(Model model, State source, State target, PathFormula pathFormula) {
         if (pathFormula instanceof Next) {
             Next next = (Next) pathFormula;
-            return checkState(model, target, next.stateFormula);
+            boolean holds = checkState(model, target, next.stateFormula);
+
+            return new PathResult(holds, List.of(target.getName()));
+        } else if (pathFormula instanceof Until) {
+            Until until = (Until) pathFormula;
+
+            if (until.getRightActions().isEmpty()) {
+                boolean holds = checkState(model, source, until.right);
+                return new PathResult(holds, null);
+            }
+
+            if (until.getLeftActions().isEmpty()) {
+                boolean currentState = checkState(model, source, until.left);
+
+                if (currentState) {
+                    boolean holds = checkState(model, target, until.right);
+                    return new PathResult(holds, null);
+                } else {
+                    return new PathResult(false, null);
+                }
+            }
+
+            List<State> E = new ArrayList<>();
+            Map<State, State> parents = new HashMap<>();
+            for (State state : model.getStates()) {
+                if (checkState(model, state, until.right)) {
+                    E.add(state);
+                    parents.put(state, null);
+                }
+            }
+            if (E.size() == 0) return new PathResult(false, null);
+ 
+            List<State> T = new ArrayList<>(E);
+            while (E.size() > 0) {
+                State sPrime = E.get(0);
+                E.remove(0);
+                for (State s : sPrime.getPredecesors()) {
+                    if (checkState(model, s, until.left) && !(T.contains(s))) {
+                        E.add(s);
+                        T.add(s);
+
+                        parents.put(s, sPrime);
+
+                        if (T.contains(source)){ 
+                            List<String> pathTrace = new ArrayList<>();
+
+                            State cur = source;
+                            while (cur != null) {
+                                cur = parents.get(cur);
+                                if (cur != null) pathTrace.add(cur.getName());
+                            }
+
+                            Collections.reverse(pathTrace);
+                            return new PathResult(true, pathTrace);
+                        }
+                    }
+                }
+            }
+
+            
+            return new PathResult(false, null);
         }
-        return false;
+        return new PathResult(false, null);
     }
 
     @Override
@@ -106,7 +171,11 @@ public class SimpleModelChecker implements ModelChecker {
     
     public String getBetterTrace() {
         if (trace == null || trace.isEmpty()) return null;
-        return String.join("-", trace);
+
+        List<String> copy = new ArrayList<>(trace);
+        Collections.reverse(copy);
+
+        return String.join("-", copy);
     }
 
 

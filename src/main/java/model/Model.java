@@ -16,6 +16,12 @@ public class Model {
         Gson gson = new Gson();
         Model model = gson.fromJson(new FileReader(filePath), Model.class);
         for (Transition t : model.transitions) {
+            State source = model.getState(t.getSource());
+            State target = model.getState(t.getTarget());
+            if (source != null && target != null) {
+                target.addPredecessor(source);
+                //add successor/transition;
+            }
             System.out.println(t);
             ;
         }
