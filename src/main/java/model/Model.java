@@ -2,6 +2,8 @@ package model;
 
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 
 import com.google.gson.Gson;
 
@@ -59,6 +61,24 @@ public class Model {
      */
     public Transition[] getTransitions() {
         return transitions;
+    }
+
+    public Set<String> getAllActions() {
+        Set<String> actions = new HashSet<>();
+
+        if (transitions == null) {
+            return actions;
+        }
+
+        for (Transition t : transitions) {
+            if (t.getActions() != null) {
+                for (String action : t.getActions()) {
+                    actions.add(action);
+                }
+            }
+        }
+
+        return actions;
     }
 
 }
