@@ -249,13 +249,48 @@ public class SimpleModelChecker implements ModelChecker {
                 System.out.println("Transformed: " + negated);
                 return checkState(model, source, negated);
             } else {
-                ForAll forAll = new ForAll(newFormula);
-                Not negated = new Not(forAll);
-                System.out.println("Query: " + negated);
-                return checkState(model, source, negated);
+                // Limit search to valid states
+                Set<State> valid = new HashSet<>();
+                for (State s : model.getStates()) {
+                    if (checkState(model, s, always.stateFormula).holds) {
+                        valid.add(s);
+                    }
+                }
+                return dfsEG(model, source, valid, new HashSet<>(), new ArrayList<>());
             }
         }
         
+        return new PathResult(false, null);
+    }
+
+
+    public PathResult dfsEG(Model model, State current, Set<State> valid, Set<State> visited, List<String> stack) {
+        if (!valid.contains(current)) return new PathResult(false, null);
+
+        // Cycle
+        if (stack.contains(current.getName())) {
+            int idx = stack.indexOf(current.getName());
+            List<String> cycle = stack.subList(idx, stack.size());
+            return new PathResult(true, new ArrayList<>(cycle));
+        }
+
+        if (visited.contains(current)) return new PathResult(false, null);
+
+        visited.add(current);
+        stack.add(current.getName());
+
+        for (Transition t : model.getTransitions()) {
+            if (t.getSource().equals(current.getName())) {
+                State next = model.getState(t.getTarget());
+
+                PathResult res = dfsEG(model, next, valid, visited, stack);
+                if (res.holds) {
+                    return res;
+                }
+            }
+        }
+
+        stack.remove(current);
         return new PathResult(false, null);
     }
 

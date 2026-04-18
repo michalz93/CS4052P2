@@ -243,13 +243,24 @@ public class ModelCheckerTest {
         }
     }
 
-    // Should accept version without s3?
     @Test
     public void lecture12s3() {
         try {
             StateFormula query = new FormulaParser("src/test/resources/lecture12/slide3.json").parse();
             assertTrue(mc.check(lecture12, query));
-            assertEquals(mc.getBetterTrace(), "s0-s1-s3");
+            assertEquals(mc.getBetterTrace(), "s0-s1-s0");
+        } catch (IOException e) {
+            e.printStackTrace();
+            fail(e.toString());
+        }
+    }
+
+    @Test
+    public void lecture12s4() {
+        try {
+            StateFormula query = new FormulaParser("src/test/resources/lecture12/slide4.json").parse();
+            assertFalse(mc.check(lecture12, query));
+            assertEquals("s0-act1-s2", mc.getBetterTrace());
         } catch (IOException e) {
             e.printStackTrace();
             fail(e.toString());
