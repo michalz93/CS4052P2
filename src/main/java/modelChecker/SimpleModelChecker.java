@@ -74,65 +74,107 @@ public class SimpleModelChecker implements ModelChecker {
             return new PathResult(false, checkStateTrace);
         } else if (query instanceof ForAll) {
             ForAll forAll = (ForAll) query;
-            Transition[] transitions = model.getTransitions();
 
-            for (Transition transition: transitions) {
-                if (transition.getSource().equals(state.getName())) {
-                    System.out.println("transition");
-                    PathResult result = checkPathFormula2(model, state, model.getState(transition.getTarget()), forAll.pathFormula, true);
-                    if (!result.holds) {
-                        System.out.println("Hello");
-                        System.out.println(result.pathTrace);
-                        checkStateTrace.addAll(result.pathTrace);
-                        if (checkStateTrace.isEmpty() || 
-                            !checkStateTrace.get(checkStateTrace.size() - 1).equals(state.getName())) {
-                            checkStateTrace.add(state.getName());
-                        }
-                        System.out.println("CheckStackTrace: " + checkStateTrace);
-                        return new PathResult(false, checkStateTrace);
-                    }
-                }
+            PathFormula pathFormula = forAll.pathFormula;
+
+            PathFormula negatedPath = new NotPath(pathFormula);
+
+            ThereExists exists = new ThereExists(negatedPath);
+
+            Not result = new Not(exists);
+
+            System.out.println("Transformed: " + result);
+
+            return checkState(model, state, result);
+            /*if (pathFormula instanceof Next) {
+                Next next = (Next) pathFormula;
+                StateFormula stateFormula = next.stateFormula;
+                Not not = new Not(stateFormula);
+                Next newNext = new Next(not, next.getActions());
+                ThereExists thereExists = new ThereExists(newNext);
+                Not negated = new Not(thereExists);
+
+                System.out.println("Transformed: " + negated);
+                return checkState(model, state, negated);
+            } else if (pathFormula instanceof Until) {
+                Until until = (Until) pathFormula;
+                StateFormula stateFormula = until.stateFormula;
+                Not not = new Not(stateFormula);
+                Next newNext = new Next(not, next.getActions());
+                ThereExists thereExists = new ThereExists(newNext);
+                Not negated = new Not(thereExists);
+
+                System.out.println("Transformed: " + negated);
+                return checkState(model, state, negated);
             }
+            
+            PathResult result = checkPathFormula2(model, state, forAll.pathFormula, true);
+            if (!result.holds) {
+                System.out.println("Hello");
+                System.out.println(result.pathTrace);
+                checkStateTrace.addAll(result.pathTrace);
+                if (checkStateTrace.isEmpty() || 
+                    !checkStateTrace.get(checkStateTrace.size() - 1).equals(state.getName())) {
+                    checkStateTrace.add(state.getName());
+                }
+                System.out.println("CheckStackTrace: " + checkStateTrace);
+                return new PathResult(false, checkStateTrace);
+            } 
+            */
 
-            return new PathResult(true, checkStateTrace);
+            //return new PathResult(true, checkStateTrace);
         } else if (query instanceof ThereExists) {
             ThereExists thereExists = (ThereExists) query;
-            Transition[] transitions = model.getTransitions();
-
-            for (Transition transition: transitions) {
-                if (transition.getSource().equals(state.getName())) {
-                    System.out.println("transition");
-                    PathResult result = checkPathFormula2(model, state, model.getState(transition.getTarget()), thereExists.pathFormula, false);
-                    if (result.holds) {
-                        System.out.println("Hello");
-                        System.out.println("CheckStackTrace: " + checkStateTrace);
-                        System.out.println("result.pathTrace: " + result.pathTrace);
-                        checkStateTrace.addAll(result.pathTrace);
-                        System.out.println("CheckStackTrace: " + checkStateTrace);
-                        if (checkStateTrace.isEmpty() || 
-                            !checkStateTrace.get(checkStateTrace.size() - 1).equals(state.getName())) {
-                            checkStateTrace.add(state.getName());
-                        }
-                        System.out.println("CheckStackTrace: " + checkStateTrace);
-                        return new PathResult(true, checkStateTrace);
-                    }
+            PathResult result = checkPathFormula2(model, state, thereExists.pathFormula, false);
+            if (result.holds) {
+                System.out.println("Hello");
+                System.out.println("CheckStackTrace: " + checkStateTrace);
+                System.out.println("result.pathTrace: " + result.pathTrace);
+                checkStateTrace.addAll(result.pathTrace);
+                System.out.println("CheckStackTrace: " + checkStateTrace);
+                if (checkStateTrace.isEmpty() || 
+                    !checkStateTrace.get(checkStateTrace.size() - 1).equals(state.getName())) {
+                    checkStateTrace.add(state.getName());
                 }
+                System.out.println("CheckStackTrace: " + checkStateTrace);
+                return new PathResult(true, checkStateTrace);
             }
+            return new PathResult(false, checkStateTrace);
+            
         }
-
         return new PathResult(false, checkStateTrace);
     }
 
-    public PathResult checkPathFormula2(Model model, State source, State target, PathFormula pathFormula, boolean allCorrect) {
+    public PathResult checkPathFormula2(Model model, State source, PathFormula pathFormula, boolean allCorrect) {
+        System.out.println("checkPathFormula2 called with allCorect set to: " + allCorrect);
         List<String> checkStateTrace = new ArrayList<>();
-        checkStateTrace.add(target.getName());
+        //checkStateTrace.add(target.getName());
         
         if (pathFormula instanceof Next) {
             Next next = (Next) pathFormula;
-            System.out.println("This should be printed first and last" + target.getName());
-            PathResult pathResult = checkState(model, target, next.stateFormula);
+            Transition[] transitions = model.getTransitions();
+            for (Transition transition: transitions) {
+                if (transition.getSource().equals(source.getName())) {
+                    System.out.println("This should be printed first and last" + transition.getTarget());
+                    PathResult pathResult = checkState(model, model.getState(transition.getTarget()), next.stateFormula);
+                    List<String> newTrace = new ArrayList<>(pathResult.pathTrace);
 
-            return pathResult;
+                    newTrace.add(transition.getTarget());
+
+                    if (allCorrect) {
+                        if (!pathResult.holds) return pathResult;
+                    } else {
+                        if (pathResult.holds) {
+                            System.out.println("returning with successs: " + transition.getTarget());
+                            System.out.println("returning with successs: " + newTrace.get(newTrace.size() - 1));
+                            return new PathResult(pathResult.holds, newTrace);
+                        }
+                    }
+                    
+                }
+            }
+
+            return new PathResult(false, checkStateTrace);
         } else if (pathFormula instanceof Until) {
             Until until = (Until) pathFormula;
 
@@ -148,7 +190,8 @@ public class SimpleModelChecker implements ModelChecker {
                 boolean currentState = checkState(model, source, until.left).holds;
 
                 if (currentState) {
-                    boolean holds = checkState(model, target, until.right).holds;
+                    Next next = new Next(until.right, until.getRightActions());
+                    boolean holds = checkPathFormula2(model, source, next, allCorrect).holds;
                     return new PathResult(holds, null);
                 } else {
                     return new PathResult(false, null);
@@ -229,7 +272,7 @@ public class SimpleModelChecker implements ModelChecker {
         } else if (pathFormula instanceof Eventually) {
             Eventually eventually = (Eventually) pathFormula;
             Until newFormula = new Until(new BoolProp(true), eventually.stateFormula, eventually.getLeftActions(), eventually.getRightActions());
-            return checkPathFormula2(model, source, target, newFormula, allCorrect);
+            return checkPathFormula2(model, source, newFormula, allCorrect);
         } else if (pathFormula instanceof Always) {
             Always always = (Always) pathFormula;
             // This ensures that we don't waste time working on paths, if the always fails in the current state.
@@ -254,6 +297,13 @@ public class SimpleModelChecker implements ModelChecker {
                 System.out.println("Query: " + negated);
                 return checkState(model, source, negated);
             }
+        }  else if (pathFormula instanceof NotPath) {
+            NotPath notPath = (NotPath) pathFormula;
+
+            PathResult result = checkPathFormula2(model, source, notPath.inner, allCorrect);
+
+            result.holds = !result.holds;
+            return result;
         }
         
         return new PathResult(false, null);
