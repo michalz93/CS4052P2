@@ -281,6 +281,17 @@ public class ModelCheckerTest {
     }*/
 
     @Test
+    public void contraint2() {
+        try {
+            StateFormula query = new FormulaParser("src/test/resources/examples/constraint2.json").parse();
+            assertFalse(mc.check(model1, query));
+        } catch (IOException e) {
+            e.printStackTrace();
+            fail(e.toString());
+        }
+    }
+
+    @Test
     public void ctl1T1M1() {
         try {
             StateFormula query = new FormulaParser("src/test/resources/examples/ctl1-1.json").parse();
@@ -381,6 +392,30 @@ public class ModelCheckerTest {
         }
     }
 
+    @Test
+    public void contraint2M2() {
+        try {
+            StateFormula query = new FormulaParser("src/test/resources/examples/constraint2.json").parse();
+            assertFalse(mc.check(model2, query));
+        } catch (IOException e) {
+            e.printStackTrace();
+            fail(e.toString());
+        }
+    }
+
+    // This test adds allowed actions of act1 and act2 to eventually.
+    @Test
+    public void contraint2V1() {
+        try {
+            StateFormula query = new FormulaParser("src/test/resources/examples/constraint2-1.json").parse();
+            assertTrue(mc.check(model2, query));
+            assertEquals("s0-act1-s1-act2-s2-act3-s2", mc.getBetterTrace());
+        } catch (IOException e) {
+            e.printStackTrace();
+            fail(e.toString());
+        }
+    }
+
     // Model 3
 
     @Test
@@ -455,4 +490,8 @@ public class ModelCheckerTest {
             fail(e.toString());
         }
     }
+
+    // Model 5
+
+    
 }
