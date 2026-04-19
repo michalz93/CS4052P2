@@ -19,9 +19,7 @@ import org.junit.Rule;
 import org.junit.rules.TestName;
 
 public class ModelCheckerTest {
-    private static Model model;
-    private static Model model2;
-    private static Model model3, model4;
+    private static Model model1, model15, model2, model3, model4;
     private static Model basicModel;
     private static Model pModel;
     private static Model lecture12;
@@ -30,7 +28,8 @@ public class ModelCheckerTest {
 
     @BeforeClass
     public static void setup() throws IOException {
-        model = Model.parseModel("src/test/resources/examples/model1.json");
+        model1 = Model.parseModel("src/test/resources/examples/model1.json");
+        model15 = Model.parseModel("src/test/resources/examples/model15.json");
         model2 = Model.parseModel("src/test/resources/examples/model2.json");
         model3 = Model.parseModel("src/test/resources/examples/model3.json");
         model4 = Model.parseModel("src/test/resources/examples/model4.json");
@@ -46,20 +45,21 @@ public class ModelCheckerTest {
     @Before 
     public void beforeEach() throws IOException {
         mc = new SimpleModelChecker();
+        System.out.println("\n");
         System.out.println("Test nr: " + count + " Test name: " + testName.getMethodName());
         count++;
     }
     
     /*
-     * An example of how to set up and call the model building methods and make
-     * a call to the model checker itself. The contents of model.json,
+     * An example of how to set up and call the model1 building methods and make
+     * a call to the model1 checker itself. The contents of model1.json,
      * constraint1.json and ctl.json are just examples, you need to add new
      * models and formulas for the mutual exclusion task.
      **/
     /*@Test
     public void buildAndCheckModel() {
         try {
-            Model model = Model.parseModel("src/test/resources/model1.json");
+            Model model1 = Model.parseModel("src/test/resources/model1.json");
 
             
             //StateFormula query = new FormulaParser("src/test/resources/ctl1.json").parse();
@@ -67,9 +67,9 @@ public class ModelCheckerTest {
 
             ModelChecker mc = new SimpleModelChecker();
 
-            mc.check(model,query);
+            mc.check(model1,query);
             // TO IMPLEMENT
-            //assertTrue(mc.check(model, query));
+            //assertTrue(mc.check(model1, query));
         } catch (IOException e) {
             e.printStackTrace();
             fail(e.toString());
@@ -81,7 +81,7 @@ public class ModelCheckerTest {
         try {
             StateFormula query = new FormulaParser("src/test/resources/basicLogic/true.json").parse();
 
-            assertTrue(mc.check(model, query));
+            assertTrue(mc.check(model1, query));
         } catch (IOException e) {
             e.printStackTrace();
             fail(e.toString());
@@ -93,7 +93,7 @@ public class ModelCheckerTest {
         try {
             StateFormula query = new FormulaParser("src/test/resources/basicLogic/false.json").parse();
 
-            assertFalse(mc.check(model, query));
+            assertFalse(mc.check(model1, query));
         } catch (IOException e) {
             e.printStackTrace();
             fail(e.toString());
@@ -105,7 +105,7 @@ public class ModelCheckerTest {
         try {
             StateFormula query = new FormulaParser("src/test/resources/basicLogic/negation.json").parse();
 
-            assertTrue(mc.check(model, query));
+            assertTrue(mc.check(model1, query));
         } catch (IOException e) {
             e.printStackTrace();
             fail(e.toString());
@@ -117,7 +117,7 @@ public class ModelCheckerTest {
         try {
             StateFormula query = new FormulaParser("src/test/resources/basicLogic/doubleNegation.json").parse();
 
-            assertTrue(mc.check(model, query));
+            assertTrue(mc.check(model1, query));
         } catch (IOException e) {
             e.printStackTrace();
             fail(e.toString());
@@ -128,7 +128,7 @@ public class ModelCheckerTest {
     public void andQ() {
         try {
             StateFormula query = new FormulaParser("src/test/resources/basicLogic/and.json").parse();
-            assertTrue(mc.check(model, query));
+            assertTrue(mc.check(model1, query));
         } catch (IOException e) {
             e.printStackTrace();
             fail(e.toString());
@@ -139,7 +139,7 @@ public class ModelCheckerTest {
     public void orQ() {
         try {
             StateFormula query = new FormulaParser("src/test/resources/basicLogic/or.json").parse();
-            assertTrue(mc.check(model, query));
+            assertTrue(mc.check(model1, query));
         } catch (IOException e) {
             e.printStackTrace();
             fail(e.toString());
@@ -150,7 +150,7 @@ public class ModelCheckerTest {
     public void advancedBasicsQ() {
         try {
             StateFormula query = new FormulaParser("src/test/resources/basicLogic/advancedLogin.json").parse();
-            assertTrue(mc.check(model, query));
+            assertTrue(mc.check(model1, query));
         } catch (IOException e) {
             e.printStackTrace();
             fail(e.toString());
@@ -248,7 +248,7 @@ public class ModelCheckerTest {
         try {
             StateFormula query = new FormulaParser("src/test/resources/lecture12/slide3.json").parse();
             assertTrue(mc.check(lecture12, query));
-            assertEquals(mc.getBetterTrace(), "s0-s1-s0");
+            assertEquals("s0-act1-s1-act1-s0", mc.getBetterTrace());
         } catch (IOException e) {
             e.printStackTrace();
             fail(e.toString());
@@ -272,13 +272,74 @@ public class ModelCheckerTest {
     public void ctl1M1() {
         try {
             StateFormula query = new FormulaParser("src/test/resources/examples/ctl1.json").parse();
-            assertFalse(mc.check(model, query));
-            //assertEquals(mc.getBetterTrace(), "s0-s1");
+            assertFalse(mc.check(model1, query));
+            assertEquals("s0-s1", mc.getBetterTrace());
         } catch (IOException e) {
             e.printStackTrace();
             fail(e.toString());
         }
     }*/
+
+    @Test
+    public void ctl1T1M1() {
+        try {
+            StateFormula query = new FormulaParser("src/test/resources/examples/ctl1-1.json").parse();
+            assertFalse(mc.check(model1, query));
+        } catch (IOException e) {
+            e.printStackTrace();
+            fail(e.toString());
+        }
+    }
+
+    @Test
+    public void ctl1T2M1() {
+        try {
+            StateFormula query = new FormulaParser("src/test/resources/examples/ctl1-2.json").parse();
+            assertFalse(mc.check(model1, query));
+            assertEquals("s0-act1-s1-act2-s2-act2-s0", mc.getBetterTrace());
+        } catch (IOException e) {
+            e.printStackTrace();
+            fail(e.toString());
+        }
+    }
+
+    @Test
+    public void ctl1T2OM1() {
+        try {
+            StateFormula query = new FormulaParser("src/test/resources/examples/ctl1-2O.json").parse();
+            assertFalse(mc.check(model1, query));
+        } catch (IOException e) {
+            e.printStackTrace();
+            fail(e.toString());
+        }
+    }
+
+    // Model 1.5
+
+    @Test
+    public void ctl1T2OM15() {
+        try {
+            StateFormula query = new FormulaParser("src/test/resources/examples/ctl1-2O.json").parse();
+            assertTrue(mc.check(model15, query));
+            assertEquals("s0-act1-s1-act2-s2-act3-s0", mc.getBetterTrace(0));
+            assertEquals("s2-act3-s0", mc.getBetterTrace(1));
+        } catch (IOException e) {
+            e.printStackTrace();
+            fail(e.toString());
+        }
+    }
+
+    @Test
+    public void ctl1T2M15() {
+        try {
+            StateFormula query = new FormulaParser("src/test/resources/examples/ctl1-2.json").parse();
+            assertFalse(mc.check(model15, query));
+            assertEquals("s0-act1-s1-act2-s2-act2-s0", mc.getBetterTrace());
+        } catch (IOException e) {
+            e.printStackTrace();
+            fail(e.toString());
+        }
+    }
 
 
     // Model 2
@@ -313,7 +374,7 @@ public class ModelCheckerTest {
         try {
             StateFormula query = new FormulaParser("src/test/resources/examples/constraint1.json").parse();
             assertFalse(mc.check(model2, query));
-            assertEquals("s0-act1-s1-act2-s3", mc.getBetterTrace());
+            assertEquals("s0-act1-s1-act2-s3-act1-s3", mc.getBetterTrace());
         } catch (IOException e) {
             e.printStackTrace();
             fail(e.toString());
@@ -352,7 +413,8 @@ public class ModelCheckerTest {
     public void constraint1M4() {
         try {
             StateFormula query = new FormulaParser("src/test/resources/examples/constraint1.json").parse();
-            assertTrue(mc.check(model4, query));
+            assertFalse(mc.check(model4, query));
+            assertEquals("s0-act1-s1-act2-s3-act1-s3", mc.getBetterTrace());
         } catch (IOException e) {
             e.printStackTrace();
             fail(e.toString());
