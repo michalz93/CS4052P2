@@ -78,5 +78,10 @@ public class State {
     public int hashCode() {
         return name.hashCode();
     }
+
+    @Override
+    public String toString() {
+        return this.name;
+    }
 	
 }

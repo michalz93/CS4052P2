@@ -207,6 +207,7 @@ public class SimpleModelChecker implements ModelChecker {
 
             if (!allCorrect) {
                 Set<State> T = new HashSet<>();
+                Set<State> almostEndStates = new HashSet<>();
 
                 while (E.size() > 0) {
                     State sPrime = E.poll();
@@ -227,6 +228,7 @@ public class SimpleModelChecker implements ModelChecker {
                         if (!checkState(model, s, until.left).holds) continue; 
                         System.out.println("Added state: " + s + " to second target");
                         T.add(s);
+                        almostEndStates.add(s);
 
                         parents.put(s, sPrime);
                         parentAction.put(s, allowedAction);
@@ -234,17 +236,23 @@ public class SimpleModelChecker implements ModelChecker {
                 }
 
                 if (T.contains(source)) {
-                    return new PathResult(true, checkStateTrace);
+                    System.out.println("returning here");
+                    List<String> pathTrace = new ArrayList<>();
+                    String action = parentAction.get(source);
+                    State parent = parents.get(source);
+                    
+                    if (parent != null) pathTrace.add(parent.getName());
+                    if (action != null) pathTrace.add(action);
+                    return new PathResult(true, pathTrace);
                 }
 
-                System.out.println(T);
                 
                 E = new ArrayDeque<>(T);
 
-                System.out.println("Now regular search");
+                System.out.println("Now regular search with: " + T);
                 while (E.size() > 0) {
                     State sPrime = E.poll();
-                    System.out.println("Allowed actions: " + until.getRightActions() + " and target state is: " + sPrime.getName());
+                    System.out.println("Allowed actions: " + until.getLeftActions() + " and target state is: " + sPrime.getName());
 
                     for (Transition transition : model.getTransitions()) {
                         System.out.println("Transition from " + transition.getSource() + " to " + transition.getTarget());
@@ -270,14 +278,25 @@ public class SimpleModelChecker implements ModelChecker {
                         if (T.contains(source)){ 
                             System.out.println("returning");
                             List<String> pathTrace = new ArrayList<>();
+                            Set<State> seen = new HashSet<>();
+
+                            System.out.println("parents: " + parents + " parentsActions: " + parentAction);
 
                             State cur = source;
-                            while (parents.get(cur) != null) {
+                            while (cur != null && !seen.contains(cur)) {
+                                seen.add(cur);
+                                
                                 String action = parentAction.get(cur);
-                                cur = parents.get(cur);
+                                State parent = parents.get(cur);
+                                System.out.println(almostEndStates.contains(cur));
+                                System.out.println("Cur and action" + cur + " " + action);
+                                System.out.println("current thats added " + cur);
                                 if (action != null) pathTrace.add(action);
-                                if (cur != null) pathTrace.add(cur.getName());
+                                if (parent != null) pathTrace.add(parent.getName());
+
+                                cur = parent;
                             }
+                            
 
                             Collections.reverse(pathTrace);
                             return new PathResult(true, pathTrace);

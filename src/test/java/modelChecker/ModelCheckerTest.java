@@ -185,7 +185,7 @@ public class ModelCheckerTest {
             StateFormula query = new FormulaParser("src/test/resources/simplePathLogic/allHavePAsNext.json").parse();
             //StateFormula negatedQuery = new FormulaParser("src/test/resources/allHavePAsNext.json", true).parse();
             assertFalse(mc.check(basicModel, query));
-            assertEquals("s2-s0", mc.getBetterTrace());
+            assertEquals("s2-s0", mc.getBetterTrace(1));
             //assertFalse(mc.check(basicModel, negatedQuery));
         } catch (IOException e) {
             e.printStackTrace();
@@ -321,7 +321,7 @@ public class ModelCheckerTest {
         try {
             StateFormula query = new FormulaParser("src/test/resources/examples/ctl1-2O.json").parse();
             assertTrue(mc.check(model15, query));
-            assertEquals("s0-act1-s1-act2-s2-act3-s0", mc.getBetterTrace(0));
+            assertEquals("s0-act2-s2-act3-s0", mc.getBetterTrace(0));
             assertEquals("s2-act3-s0", mc.getBetterTrace(1));
         } catch (IOException e) {
             e.printStackTrace();
@@ -349,7 +349,7 @@ public class ModelCheckerTest {
         try {
             StateFormula query = new FormulaParser("src/test/resources/examples/ctl2.json").parse();
             assertTrue(mc.check(model2, query));
-            assertEquals("s0-act1-s1-act2-s2", mc.getBetterTrace());
+            assertEquals("s0-act1-s1-act2-s3", mc.getBetterTrace());
         } catch (IOException e) {
             e.printStackTrace();
             fail(e.toString());
@@ -426,7 +426,7 @@ public class ModelCheckerTest {
         try {
             StateFormula query = new FormulaParser("src/test/resources/examples/constraint1O.json").parse();
             assertTrue(mc.check(model4, query));
-            assertEquals("s0-act1-s1-act3-s2", mc.getBetterTrace());
+            assertEquals("s0-act1-s1-act3-s3", mc.getBetterTrace());
         } catch (IOException e) {
             e.printStackTrace();
             fail(e.toString());
