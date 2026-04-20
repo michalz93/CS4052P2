@@ -33,11 +33,10 @@ public class SimpleModelChecker implements ModelChecker {
     }
 
     public PathResult checkState(Model model, State state ,StateFormula query) {
-        System.out.println("Check state for state: " + state.getName() + " and query: " + query);
+        //System.out.println("Check state for state: " + state.getName() + " and query: " + query);
         List<String> checkStateTrace = new ArrayList<>();
         if (query instanceof BoolProp) {
             BoolProp bp = (BoolProp) query;
-            System.out.println("boolprop adding" + state.getName());
             checkStateTrace.add(state.getName());
             return new PathResult(bp.value, checkStateTrace);
         } else if (query instanceof Not) {
@@ -62,7 +61,6 @@ public class SimpleModelChecker implements ModelChecker {
                 return (new PathResult(true, checkStateTrace));
             }
             PathResult rightSide = checkState(model, state, right);
-            System.out.println("Formula is: " + (leftSide.holds || rightSide.holds));
             return (new PathResult((leftSide.holds || rightSide.holds), checkStateTrace));
         } else if (query instanceof AtomicProp) {
             AtomicProp atom = (AtomicProp) query;
@@ -70,31 +68,28 @@ public class SimpleModelChecker implements ModelChecker {
             String[] stateLabels = state.getLabel();
             if (checkStateTrace.isEmpty() || 
                     !checkStateTrace.get(checkStateTrace.size() - 1).equals(state.getName())) {
-                         System.out.println("atomic adding" + state.getName());
                     checkStateTrace.add(state.getName());
             }
 
             for (String stateLabel : stateLabels) {
                 if (label.equals(stateLabel)) {
-                    System.out.println("Formula holds");
                     return new PathResult(true, checkStateTrace);
                 }
             }
 
-            System.out.println("Formula doesn't hold");
             return new PathResult(false, checkStateTrace);
         } else if (query instanceof ForAll) {
             ForAll forAll = (ForAll) query;
             PathResult result = checkPathFormula2(model, state, forAll.pathFormula, true);
             if (!result.holds) {
-                System.out.println("for all found counterexample");
-                System.out.println("for all adding " + result.pathTrace);
+                /*System.out.println("for all found counterexample");
+                System.out.println("for all adding " + result.pathTrace);*/
                 checkStateTrace.addAll(result.pathTrace);
                 if (checkStateTrace.isEmpty() || 
                     !checkStateTrace.get(checkStateTrace.size() - 1).equals(state.getName())) {
                     checkStateTrace.add(state.getName());
                 }
-                System.out.println("CheckStackTrace: " + checkStateTrace);
+                //System.out.println("CheckStackTrace: " + checkStateTrace);
                 return new PathResult(false, checkStateTrace);
             } 
 
@@ -103,14 +98,14 @@ public class SimpleModelChecker implements ModelChecker {
             ThereExists thereExists = (ThereExists) query;
             PathResult result = checkPathFormula2(model, state, thereExists.pathFormula, false);
             if (result.holds) {
-                System.out.println("there exists found path");
-                System.out.println("exist adding " + result.pathTrace);
+                /*System.out.println("there exists found path");
+                System.out.println("exist adding " + result.pathTrace);*/
                 checkStateTrace.addAll(result.pathTrace);
                 if (checkStateTrace.isEmpty() || 
                     !checkStateTrace.get(checkStateTrace.size() - 1).equals(state.getName())) {
                     checkStateTrace.add(state.getName());
                 }
-                System.out.println("CheckStackTrace: " + checkStateTrace);
+                //System.out.println("CheckStackTrace: " + checkStateTrace);
                 return new PathResult(true, checkStateTrace);
             }
             return new PathResult(false, checkStateTrace); // We don't care about trace
@@ -121,7 +116,7 @@ public class SimpleModelChecker implements ModelChecker {
 
     // Check paths from given state now.
     public PathResult checkPathFormula2(Model model, State source, PathFormula pathFormula, boolean allCorrect) {
-        System.out.println("Check path formula: " +  pathFormula);
+        //System.out.println("Check path formula: " +  pathFormula);
         List<String> checkStateTrace = new ArrayList<>();
         
         if (pathFormula instanceof Next) {
@@ -131,12 +126,12 @@ public class SimpleModelChecker implements ModelChecker {
         } else if (pathFormula instanceof Until) {
             Until until = (Until) pathFormula;
 
-            System.out.println("Until left side: " + until.getLeftActions());
-            System.out.println("Until right side: " + until.getRightActions());
+            /*System.out.println("Until left side: " + until.getLeftActions());
+            System.out.println("Until right side: " + until.getRightActions());*/
 
             // Can't take final transition, so effectively it just checks Phi 2 for this state.
             if (until.getRightActions().isEmpty()) {
-                System.out.println("Can't make any transitions, formula must hold in this state");
+                //System.out.println("Can't make any transitions, formula must hold in this state");
                 PathResult result = checkState(model, source, until.right);
                 return result;
             }
@@ -157,7 +152,7 @@ public class SimpleModelChecker implements ModelChecker {
                 boolean holdsAtLeastOnce = false;
                 for (Transition transition : model.getTransitions()) {
                     if (transition.getSource().equals(source.getName())) {
-                        System.out.println("This should be printed first and last" + transition.getTarget());
+                        //System.out.println("This should be printed first and last" + transition.getTarget());
                         PathResult pathResult = checkState(model, model.getState(transition.getTarget()), until.right);
                         String allowedAction = transition.getAllowedAction(until.getRightActions());
                         List<String> newTrace = new ArrayList<>(pathResult.pathTrace);
@@ -165,18 +160,24 @@ public class SimpleModelChecker implements ModelChecker {
                         if (pathResult.holds) holdsAtLeastOnce = true;
 
                         if (allCorrect) {
-                            boolean allActionsAllowed = transition.allActionsAllowed(until.getRightActions());
-                            if (!pathResult.holds || !allActionsAllowed) { //TODO Add verification of transition action
+                            if (!pathResult.holds) { //TODO Add verification of transition action
                                 //checkStateTrace.add(target.getName());
                                 String anyAction = transition.getActions()[0];
                                 if (anyAction != null) newTrace.add(anyAction);
-                                System.out.println("Check path formula: " +  pathFormula + "doesn't hold");
+                                //System.out.println("Check path formula: " +  pathFormula + "doesn't hold");
                                 return new PathResult(false, newTrace);
                             } 
+                            String illegalAction = transition.getIllegalAction(until.getRightActions());
+                            if (illegalAction != null) {
+                                newTrace.add(transition.getTarget());
+                                newTrace.add(illegalAction);
+                                //System.out.println("Check path formula: " +  pathFormula + "doesn't hold due to illegal action");
+                                return new PathResult(false, newTrace);
+                            }
                         } else {
                             if (pathResult.holds && allowedAction != null) {
                                 newTrace.add(allowedAction);
-                                System.out.println("Check path formula: " +  pathFormula + "holds");
+                                //System.out.println("Check path formula: " +  pathFormula + "holds");
                                 return new PathResult(pathResult.holds, newTrace);
                             }
                         }
@@ -185,12 +186,12 @@ public class SimpleModelChecker implements ModelChecker {
 
                 // If at least one transition was valid will return that there exists at least 1 path.
                 if (holdsAtLeastOnce) {
-                    System.out.println("Check path formula: " +  pathFormula + "holds at least once");
+                    //System.out.println("Check path formula: " +  pathFormula + "holds at least once");
                     return new PathResult(true, checkStateTrace);
                 }
 
                 // If there is no valid transition then it returns false.
-                System.out.println("Check path formula: " +  pathFormula + "doesn't hold");
+                //System.out.println("Check path formula: " +  pathFormula + "doesn't hold");
                 return new PathResult(false, checkStateTrace);
             }
 
@@ -205,8 +206,6 @@ public class SimpleModelChecker implements ModelChecker {
                 }
             }
             if (E.size() == 0) return new PathResult(false, checkStateTrace); // Empty trace, we don't need trace in exist, might be issue for forall
-
-            System.out.println("There are valid end states and allCorrect: " + allCorrect);
             
 
             if (!allCorrect) {
@@ -215,10 +214,10 @@ public class SimpleModelChecker implements ModelChecker {
 
                 while (E.size() > 0) {
                     State sPrime = E.poll();
-                    System.out.println("Allowed actions: " + until.getRightActions() + " and target state is: " + sPrime.getName());
+                    //System.out.println("Allowed actions: " + until.getRightActions() + " and target state is: " + sPrime.getName());
 
                     for (Transition transition : model.getTransitions()) {
-                        System.out.println("Transition from " + transition.getSource() + " to " + transition.getTarget());
+                        //System.out.println("Transition from " + transition.getSource() + " to " + transition.getTarget());
 
                         if (!transition.getTarget().equals(sPrime.getName())) continue;
 
@@ -230,7 +229,7 @@ public class SimpleModelChecker implements ModelChecker {
 
                         // Transitions are faster to verify.
                         if (!checkState(model, s, until.left).holds) continue; 
-                        System.out.println("Added state: " + s + " to second target");
+                        //System.out.println("Added state: " + s + " to second target");
                         T.add(s);
                         almostEndStates.add(s);
 
@@ -240,7 +239,7 @@ public class SimpleModelChecker implements ModelChecker {
                 }
 
                 if (T.contains(source)) {
-                    System.out.println("returning here");
+                    //System.out.println("returning here");
                     List<String> pathTrace = new ArrayList<>();
                     String action = parentAction.get(source);
                     State parent = parents.get(source);
@@ -253,13 +252,13 @@ public class SimpleModelChecker implements ModelChecker {
                 
                 E = new ArrayDeque<>(T);
 
-                System.out.println("Now regular search with: " + T);
+                //System.out.println("Now regular search with: " + T);
                 while (E.size() > 0) {
                     State sPrime = E.poll();
-                    System.out.println("Allowed actions: " + until.getLeftActions() + " and target state is: " + sPrime.getName());
+                    //System.out.println("Allowed actions: " + until.getLeftActions() + " and target state is: " + sPrime.getName());
 
                     for (Transition transition : model.getTransitions()) {
-                        System.out.println("Transition from " + transition.getSource() + " to " + transition.getTarget());
+                        //System.out.println("Transition from " + transition.getSource() + " to " + transition.getTarget());
 
                         if (!transition.getTarget().equals(sPrime.getName())) continue;
 
@@ -280,11 +279,10 @@ public class SimpleModelChecker implements ModelChecker {
                         parentAction.put(s, allowedAction);
                         
                         if (T.contains(source)){ 
-                            System.out.println("returning");
                             List<String> pathTrace = new ArrayList<>();
                             Set<State> seen = new HashSet<>();
 
-                            System.out.println("parents: " + parents + " parentsActions: " + parentAction);
+                            //System.out.println("parents: " + parents + " parentsActions: " + parentAction);
 
                             State cur = source;
                             while (cur != null && !seen.contains(cur)) {
@@ -292,9 +290,9 @@ public class SimpleModelChecker implements ModelChecker {
                                 
                                 String action = parentAction.get(cur);
                                 State parent = parents.get(cur);
-                                System.out.println(almostEndStates.contains(cur));
+                                /*System.out.println(almostEndStates.contains(cur));
                                 System.out.println("Cur and action" + cur + " " + action);
-                                System.out.println("current thats added " + cur);
+                                System.out.println("current thats added " + cur);*/
                                 if (action != null) pathTrace.add(action);
                                 if (parent != null) pathTrace.add(parent.getName());
 
@@ -308,7 +306,7 @@ public class SimpleModelChecker implements ModelChecker {
                     }
                 }
 
-                System.out.println("Check path formula: " +  pathFormula + " returns failure for exist search");
+                //System.out.println("Check path formula: " +  pathFormula + " returns failure for exist search");
                 return new PathResult(false, checkStateTrace); //some trace should be here
             } else return dfsUntil(model, source, until, new HashSet<State>(), true, source, null);
         } else if (pathFormula instanceof Eventually) {
@@ -329,12 +327,12 @@ public class SimpleModelChecker implements ModelChecker {
             if (allCorrect) {
                 ThereExists thereExists = new ThereExists(newFormula);
                 Not negated = new Not(thereExists);
-                System.out.println("Transformed: " + negated);
+                //System.out.println("Transformed: " + negated);
                 return checkState(model, source, negated);
             } else {
                 ForAll forAll = new ForAll(newFormula);
                 Not negated = new Not(forAll);
-                System.out.println("Query: " + negated);
+                //System.out.println("Query: " + negated);
                 return checkState(model, source, negated);
             }
         }
@@ -349,8 +347,7 @@ public class SimpleModelChecker implements ModelChecker {
     }
 
     public PathResult dfsUntil(Model model, State current, Until until, Set<State> visited, boolean inital, State initialState, Transition transition) {
-        System.out.println("dfsSearch, current state:" + current.getName());
-        //if (visited.contains(current)) return new PathResult(true, null);
+        //System.out.println("dfsSearch, current state:" + current.getName());
         visited.add(current);
 
         List<String> dfsTrace = new ArrayList<>();
@@ -376,7 +373,7 @@ public class SimpleModelChecker implements ModelChecker {
 
         if (!checkState(model, current, until.left).holds) {
             dfsTrace.add(current.getName());
-            System.out.println("It ends here");
+            //System.out.println("It ends here");
             return new PathResult(false, dfsTrace);
         }
 
@@ -408,14 +405,14 @@ public class SimpleModelChecker implements ModelChecker {
                     dfsTrace.add(t.getTarget());
                     dfsTrace.add(t.getActions()[0]);
                     dfsTrace.add(current.getName());
-                    System.out.println("It ends here22");
+                    //System.out.println("It ends here22");
                     return new PathResult(false, dfsTrace);
                 }
                 
                 String action = t.getAllowedAction(until.getLeftActions());
                 if (action == null) {
                     // can return any action i guess? or lack of actions?
-                    System.out.println("It ends here4");
+                    //System.out.println("It ends here4");
                     dfsTrace.add(t.getTarget());
                     dfsTrace.add(t.getActions()[0]);
                     dfsTrace.add(current.getName());
@@ -430,7 +427,7 @@ public class SimpleModelChecker implements ModelChecker {
                 PathResult result = dfsUntil(model, next, until, new HashSet<>(visited), false, initialState, transition);
 
                 if (!result.holds) {
-                    System.out.println("It ends here3");
+                    //System.out.println("It ends here3");
                     List<String> trace = new ArrayList<>(result.pathTrace);
                     trace.addAll(dfsTrace);
                     return new PathResult(false, trace);
@@ -442,7 +439,7 @@ public class SimpleModelChecker implements ModelChecker {
         dfsTrace.add(current.getName());
         //if (!hasSuccessor) return new PathResult(false, dfsTrace);
 
-        System.out.println("It ends here7");
+        //System.out.println("It ends here7");
         return new PathResult(true, dfsTrace); // TODO Some trace here
     }
 

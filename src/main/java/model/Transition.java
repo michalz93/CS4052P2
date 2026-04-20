@@ -52,6 +52,15 @@ public class  Transition {
         return true;
     }
 
+    public String getIllegalAction(Set<String> allowedActions) {
+        for (String action : actions) {
+            if (!allowedActions.contains(action)) {
+                return action; // Can move to the state in not allowed way.
+            }
+        }
+        return null;
+    }
+
     public String getAllowedAction(Set<String> allowedActions) {
         System.out.println("getAllowedAction, actioms: " + Arrays.toString(actions) + " allowedActions: " + allowedActions);
         for (String action : actions) {

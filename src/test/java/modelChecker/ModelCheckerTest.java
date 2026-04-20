@@ -358,17 +358,6 @@ public class ModelCheckerTest {
     }
 
     // Model 1
-    /*@Test
-    public void ctl1M1() {
-        try {
-            StateFormula query = new FormulaParser("src/test/resources/examples/ctl1.json").parse();
-            assertFalse(mc.check(model1, query));
-            assertEquals("s0-s1", mc.getBetterTrace());
-        } catch (IOException e) {
-            e.printStackTrace();
-            fail(e.toString());
-        }
-    }*/
 
     @Test
     public void contraint2() {
@@ -606,7 +595,7 @@ public class ModelCheckerTest {
             e.printStackTrace();
             fail(e.toString());
         }
-    }
+    } 
 
 
 
@@ -624,7 +613,10 @@ public class ModelCheckerTest {
         }
     }
 
-    /*@Test
+    // Take a long time
+
+    /*
+    @Test
     public void ctl1E() {
         try {
             StateFormula query = new FormulaParser("src/test/resources/examples/ctl1E.json").parse();
@@ -646,7 +638,7 @@ public class ModelCheckerTest {
             e.printStackTrace();
             fail(e.toString());
         }
-    } */
+    } 
 
-    
+    */
 }
