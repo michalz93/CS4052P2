@@ -1,0 +1,5 @@
+{
+	"formula": "AzFb(g && AG( A ( TRUE bUz ( p || q ) ) ))",
+	"b": ["act1", "act2"],
+	"z": ["act3", "act4"]
+}

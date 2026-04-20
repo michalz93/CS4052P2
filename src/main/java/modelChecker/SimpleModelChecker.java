@@ -8,7 +8,6 @@ import java.nio.file.Path;
 import java.util.*;
 
 public class SimpleModelChecker implements ModelChecker {
-    //private List<String> trace = new ArrayList<>();
     private List<List<String>> traces = new ArrayList<>();
 
     @Override
@@ -24,13 +23,11 @@ public class SimpleModelChecker implements ModelChecker {
             PathResult result = checkState(model, s , query);
             System.out.println("\n This is trace: " + result.pathTrace);
             if (!result.holds) {
-                //trace.add(s.getName());
                 traces.add(result.pathTrace);
                 return false;
             }
             traces.add(result.pathTrace);
         }
-        
         
         return true;
     }
@@ -91,7 +88,7 @@ public class SimpleModelChecker implements ModelChecker {
             PathResult result = checkPathFormula2(model, state, forAll.pathFormula, true);
             if (!result.holds) {
                 System.out.println("for all found counterexample");
-                 System.out.println("for all adding " + result.pathTrace);
+                System.out.println("for all adding " + result.pathTrace);
                 checkStateTrace.addAll(result.pathTrace);
                 if (checkStateTrace.isEmpty() || 
                     !checkStateTrace.get(checkStateTrace.size() - 1).equals(state.getName())) {
@@ -129,40 +126,8 @@ public class SimpleModelChecker implements ModelChecker {
         
         if (pathFormula instanceof Next) {
             Next next = (Next) pathFormula;
-            boolean holdsAtLeastOnce = false;
-            
-            for (Transition transition : model.getTransitions()) {
-                if (transition.getSource().equals(source.getName())) {
-                    System.out.println("This should be printed first and last" + transition.getTarget());
-                    PathResult pathResult = checkState(model, model.getState(transition.getTarget()), next.stateFormula);
-                    List<String> newTrace = new ArrayList<>(pathResult.pathTrace);
-                    //System.out.println("next adding " + transition.getTarget());
-                    //newTrace.add(transition.getTarget());
-                    if (pathResult.holds) holdsAtLeastOnce = true;
-
-                    if (allCorrect) {
-                        if (!pathResult.holds) {
-                            //checkStateTrace.add(target.getName());
-                            System.out.println("Check path formula: " +  pathFormula + "doesn't hold");
-                            return new PathResult(pathResult.holds, newTrace);
-                        } 
-                    } else {
-                        if (pathResult.holds) {
-                            //checkStateTrace.add(target.getName());
-                            System.out.println("Check path formula: " +  pathFormula + "holds");
-                            return new PathResult(pathResult.holds, newTrace);
-                        }
-                    }
-                }
-            }
-
-            // If there is no transition then it returns false. Could be replaced with until but this is simple enough.
-            if (holdsAtLeastOnce) {
-                System.out.println("Check path formula: " +  pathFormula + "holds at least once");
-                return new PathResult(true, checkStateTrace);
-            }
-            System.out.println("Check path formula: " +  pathFormula + "doesn't hold");
-            return new PathResult(false, checkStateTrace);
+            Until newFormula = new Until(new BoolProp(true), next.stateFormula, new HashSet<String>(), next.getActions());
+            return checkPathFormula2(model, source, newFormula, allCorrect);
         } else if (pathFormula instanceof Until) {
             Until until = (Until) pathFormula;
 
@@ -178,17 +143,56 @@ public class SimpleModelChecker implements ModelChecker {
 
             /*
             // Can't take any transitions except final, so Phi 1 must hold and next state has to hold Phi 2 and be achievable by legal action from B.
-            // TODO For all / exist
+            // If can't make any left transitions than this is just next.
+            // TODO For all / exist */
             if (until.getLeftActions().isEmpty()) {
-                boolean currentState = checkState(model, source, until.left).holds;
+                // This means that only B transition can happen once, 
+                PathResult currentState = checkState(model, source, until.left);
 
-                if (currentState) {
-                    boolean holds = checkState(model, target, until.right).holds;
-                    return new PathResult(holds, null);
-                } else {
-                    return new PathResult(false, null);
+                // If it doesnt hold in current state then until will fail. For next, until.left will simply be TRUE.
+                if (!currentState.holds) {
+                    return currentState;
                 }
-            }*/
+
+                boolean holdsAtLeastOnce = false;
+                for (Transition transition : model.getTransitions()) {
+                    if (transition.getSource().equals(source.getName())) {
+                        System.out.println("This should be printed first and last" + transition.getTarget());
+                        PathResult pathResult = checkState(model, model.getState(transition.getTarget()), until.right);
+                        String allowedAction = transition.getAllowedAction(until.getRightActions());
+                        List<String> newTrace = new ArrayList<>(pathResult.pathTrace);
+                        
+                        if (pathResult.holds) holdsAtLeastOnce = true;
+
+                        if (allCorrect) {
+                            boolean allActionsAllowed = transition.allActionsAllowed(until.getRightActions());
+                            if (!pathResult.holds || !allActionsAllowed) { //TODO Add verification of transition action
+                                //checkStateTrace.add(target.getName());
+                                String anyAction = transition.getActions()[0];
+                                if (anyAction != null) newTrace.add(anyAction);
+                                System.out.println("Check path formula: " +  pathFormula + "doesn't hold");
+                                return new PathResult(false, newTrace);
+                            } 
+                        } else {
+                            if (pathResult.holds && allowedAction != null) {
+                                newTrace.add(allowedAction);
+                                System.out.println("Check path formula: " +  pathFormula + "holds");
+                                return new PathResult(pathResult.holds, newTrace);
+                            }
+                        }
+                    }
+                }
+
+                // If at least one transition was valid will return that there exists at least 1 path.
+                if (holdsAtLeastOnce) {
+                    System.out.println("Check path formula: " +  pathFormula + "holds at least once");
+                    return new PathResult(true, checkStateTrace);
+                }
+
+                // If there is no valid transition then it returns false.
+                System.out.println("Check path formula: " +  pathFormula + "doesn't hold");
+                return new PathResult(false, checkStateTrace);
+            }
 
             Queue<State> E = new ArrayDeque<>();
             Map<State, State> parents = new HashMap<>();
@@ -381,14 +385,7 @@ public class SimpleModelChecker implements ModelChecker {
 
                 State next = model.getState(t.getTarget());
 
-                if (visited.contains(next) ) { //&& !next.getName().equals(initialState.getName())
-                    dfsTrace.add(t.getTarget());
-                    dfsTrace.add(t.getActions()[0]);
-                    dfsTrace.add(current.getName());
-                    System.out.println("It ends here22");
-                    return new PathResult(false, dfsTrace);
-                }
-
+                // If next state is the final state, and there are only allowed transitions there then we reached the end state.
                 if (checkState(model, next, until.right).holds) {
                     boolean canTransit = t.hasAllowedAction(until.getRightActions());
                     boolean allAllowed = t.allActionsAllowed(until.getRightActions());
@@ -398,7 +395,7 @@ public class SimpleModelChecker implements ModelChecker {
                         continue;
                     } else {
                         // If there is a state p we can reach, but not by action in B then it fails.
-                        // Yeah it actually doesn't make sense to terminate, should just treat normally.
+                        // Yeah it actually doesn't make sense to terminate, should just treat normally to allow to transfer through it.
                         /*dfsTrace.add(t.getTarget());
                         dfsTrace.add(t.getActions()[0]);
                         dfsTrace.add(current.getName());
@@ -406,6 +403,14 @@ public class SimpleModelChecker implements ModelChecker {
                         return new PathResult(false, dfsTrace);*/
                     }
                 } 
+
+                if (visited.contains(next) ) { //&& !next.getName().equals(initialState.getName())
+                    dfsTrace.add(t.getTarget());
+                    dfsTrace.add(t.getActions()[0]);
+                    dfsTrace.add(current.getName());
+                    System.out.println("It ends here22");
+                    return new PathResult(false, dfsTrace);
+                }
                 
                 String action = t.getAllowedAction(until.getLeftActions());
                 if (action == null) {
